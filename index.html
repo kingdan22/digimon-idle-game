@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digimon Idle World 2D - Full Animated</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        :root {
+            --bg-color: #080c14;
+            --panel-bg: #0f172a;
+            --digivice-screen: #7da38d;
+            --accent-orange: #f97316;
+            --accent-blue: #38bdf8;
+            --accent-yellow: #facc15;
+            --accent-green: #22c55e;
+        }
+
+        body {
+            font-family: 'Press Start 2P', monospace;
+            background-color: var(--bg-color);
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            user-select: none;
+            overflow-x: hidden;
+        }
+
+        .game-layout {
+            display: grid;
+            grid-template-columns: 420px 1fr;
+            gap: 20px;
+            max-width: 1050px;
+            width: 100%;
+        }
+
+        @media (max-width: 900px) {
+            .game-layout { grid-template-columns: 1fr; }
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border: 4px solid #1e293b;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 0 25px rgba(56, 189, 248, 0.15);
+            position: relative;
+        }
+
+        .digivice-frame {
+            background: #1e293b;
+            border: 6px solid #334155;
+            border-radius: 20px;
+            padding: 15px;
+            box-shadow: inset 0 0 15px #000;
+        }
+
+        .stage-2d {
+            width: 100%;
+            height: 260px;
+            background-color: var(--digivice-screen);
+            background-image: 
+                linear-gradient(rgba(0, 0, 0, 0.08) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 0, 0, 0.08) 1px, transparent 1px);
+            background-size: 12px 12px;
+            border: 4px solid #142e20;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* CONTAINER DO SPRITE ANIMADO */
+        .sprite-container {
+            width: 140px;
+            height: 140px;
+            position: relative;
+            z-index: 2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            animation: bounceIdle 0.8s infinite alternate ease-in-out;
+        }
+
+        .sprite-container svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(2px 4px 0px rgba(0,0,0,0.3));
+        }
+
+        @keyframes bounceIdle {
+            0% { transform: translateY(0) scale(1); }
+            100% { transform: translateY(-12px) scale(1.05, 0.95); }
+        }
+
+        /* CUTSCENE DE DIGIEVOLUÇÃO COM ANIMAÇÃO EM VÍDEO/CANVAS */
+        #evo-cutscene {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle, #38bdf8 0%, #030712 80%);
+            z-index: 9999;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .tunnel-effect {
+            position: absolute;
+            width: 250vw;
+            height: 250vh;
+            background: repeating-radial-gradient(circle, rgba(255, 255, 255, 0.2) 0, rgba(255, 255, 255, 0.2) 30px, transparent 30px, transparent 60px);
+            animation: spinTunnel 3s linear infinite;
+        }
+
+        @keyframes spinTunnel {
+            0% { transform: rotate(0deg) scale(0.8); }
+            50% { transform: rotate(180deg) scale(1.3); }
+            100% { transform: rotate(360deg) scale(0.8); }
+        }
+
+        .evo-sprite-box {
+            width: 220px;
+            height: 220px;
+            z-index: 10000;
+            animation: evoFlash 0.25s infinite alternate;
+        }
+
+        @keyframes evoFlash {
+            0% { filter: brightness(1) drop-shadow(0 0 10px #fff); transform: scale(1); }
+            100% { filter: brightness(4) drop-shadow(0 0 50px #38bdf8); transform: scale(1.15); }
+        }
+
+        .evo-banner {
+            z-index: 10000;
+            font-size: 1rem;
+            color: var(--accent-yellow);
+            text-shadow: 3px 3px 0 #000;
+            margin-top: 25px;
+            text-align: center;
+            line-height: 1.6;
+            padding: 0 10px;
+        }
+
+        .stage-floor {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 25px;
+            background: #517361;
+            border-top: 3px solid #142e20;
+        }
+
+        .floating-text {
+            position: absolute;
+            font-size: 0.85rem;
+            color: #0f172a;
+            font-weight: bold;
+            pointer-events: none;
+            animation: floatUp 0.6s forwards ease-out;
+            z-index: 10;
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-40px); }
+        }
+
+        .stats-box {
+            background: #030712;
+            border: 2px solid var(--accent-blue);
+            border-radius: 8px;
+            padding: 12px;
+            margin: 15px 0;
+            font-size: 0.65rem;
+            line-height: 1.6;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .btn {
+            font-family: 'Press Start 2P', monospace;
+            background: var(--accent-orange);
+            color: white;
+            border: none;
+            padding: 14px;
+            font-size: 0.65rem;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 0 #c2410c;
+        }
+
+        .btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 #c2410c;
+        }
+
+        .btn:disabled {
+            background: #334155;
+            box-shadow: 0 4px 0 #0f172a;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .btn-digivolve {
+            background: var(--accent-blue);
+            box-shadow: 0 4px 0 #0284c7;
+        }
+
+        .shop-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .shop-item {
+            background: #1e293b;
+            border: 2px solid #334155;
+            padding: 10px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .shop-details {
+            font-size: 0.55rem;
+            line-height: 1.5;
+        }
+
+        .shop-details small {
+            color: #94a3b8;
+            display: block;
+            margin-top: 4px;
+        }
+
+        .shop-btn {
+            width: auto;
+            padding: 8px;
+            font-size: 0.5rem;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+
+<!-- TELA DE CUTSCENE DE EVOLUÇÃO -->
+<div id="evo-cutscene">
+    <div class="tunnel-effect"></div>
+    <div id="evo-sprite-box" class="evo-sprite-box"></div>
+    <div id="evo-text-display" class="evo-banner">AGUMON DIGIEVOLUI PARA...</div>
+</div>
+
+<div class="game-layout">
+    <!-- PAINEL DIGIVICE -->
+    <div class="panel">
+        <div class="digivice-frame">
+            <h3 id="digi-stage" style="color: var(--accent-yellow); margin:0 0 5px 0; font-size:0.6rem;">FASE: BEBÊ I</h3>
+            <h1 id="digi-name" style="color: var(--accent-orange); margin:0 0 15px 0; font-size:0.85rem;">BOTAMON</h1>
+
+            <div class="stage-2d" id="interactive-stage">
+                <div id="digi-sprite" class="sprite-container"></div>
+                <div class="stage-floor"></div>
+            </div>
+        </div>
+
+        <div class="stats-box">
+            <div class="stat-row"><span>BITS:</span><b id="bits-text" style="color:var(--accent-yellow)">0</b></div>
+            <div class="stat-row"><span>BITS/SEC:</span><b id="bps-text" style="color:var(--accent-blue)">0</b></div>
+            <div class="stat-row"><span>PODER CLIQUE:</span><b id="bpc-text">1</b></div>
+            <div class="stat-row"><span>AUTOCLIQUES:</span><b id="autoclick-rate-text">0/s</b></div>
+        </div>
+
+        <button class="btn btn-digivolve" id="digivolve-btn" disabled>
+            ⚡ DIGIEVOLUIR (20 BITS)
+        </button>
+    </div>
+
+    <!-- LOJA DE TREINO -->
+    <div class="panel">
+        <h2 style="color: var(--accent-orange); margin-top:0; font-size:0.8rem;">🏋️ TREINAMENTO DIGITAL</h2>
+        <div class="shop-list" id="shop-container"></div>
+    </div>
+</div>
+
+<script>
+    // --- SINTETIZADOR DE ÁUDIO (NÃO DEPENDE DE ARQUIVOS EXTERNOS) ---
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playBeep() {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.05);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.05);
+    }
+
+    // Vinheta Completa da Digievolução (Estilo Brave Heart / Anime)
+    function playEvolutionTheme() {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        
+        const notes = [261, 329, 392, 523, 659, 783, 1046, 783, 1046, 1318];
+        notes.forEach((freq, index) => {
+            setTimeout(() => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.3);
+            }, index * 200);
+        });
+    }
+
+    // --- SPRITES EMBUTIDOS (PIXEL ART SVG GARANTIDOS QUE NUNCA QUEBRAM) ---
+    const digiSVGs = {
+        botamon: `<svg viewBox="0 0 100 100"><circle cx="50" cy="55" r="35" fill="#1e1e24"/><circle cx="38" cy="50" r="5" fill="#facc15"/><circle cx="62" cy="50" r="5" fill="#facc15"/><circle cx="40" cy="48" r="2" fill="#000"/><circle cx="64" cy="48" r="2" fill="#000"/></svg>`,
+        koromon: `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="55" rx="38" ry="30" fill="#ff8fa3"/><ellipse cx="35" cy="48" rx="6" ry="8" fill="#ef4444"/><ellipse cx="65" cy="48" rx="6" ry="8" fill="#ef4444"/><circle cx="36" cy="46" r="2" fill="#fff"/><circle cx="66" cy="46" r="2" fill="#fff"/><path d="M 30 25 Q 20 5 40 20 Z" fill="#ff8fa3"/><path d="M 70 25 Q 80 5 60 20 Z" fill="#ff8fa3"/></svg>`,
+        agumon: `<svg viewBox="0 0 100 100"><rect x="30" y="35" width="40" height="45" rx="10" fill="#f97316"/><rect x="25" y="20" width="50" height="30" rx="12" fill="#f97316"/><circle cx="40" cy="30" r="5" fill="#22c55e"/><circle cx="60" cy="30" r="5" fill="#22c55e"/><circle cx="41" cy="29" r="2" fill="#000"/><circle cx="61" cy="29" r="2" fill="#000"/><path d="M 35 42 Q 50 48 65 42" stroke="#000" stroke-width="3" fill="none"/><rect x="20" y="50" width="12" height="20" rx="5" fill="#f97316"/><rect x="68" y="50" width="12" height="20" rx="5" fill="#f97316"/></svg>`,
+        greymon: `<svg viewBox="0 0 100 100"><rect x="25" y="30" width="50" height="50" rx="10" fill="#f97316"/><path d="M 20 20 Q 50 10 80 20 L 75 40 L 25 40 Z" fill="#475569"/><circle cx="38" cy="32" r="5" fill="#ef4444"/><circle cx="62" cy="32" r="5" fill="#ef4444"/><path d="M 45 10 L 55 10 L 50 0 Z" fill="#1e293b"/><path d="M 30 50 L 40 50 L 35 60 Z" fill="#fff"/><path d="M 60 50 L 70 50 L 65 60 Z" fill="#fff"/></svg>`,
+        metalgreymon: `<svg viewBox="0 0 100 100"><rect x="25" y="30" width="50" height="50" rx="10" fill="#f97316"/><path d="M 20 18 Q 50 5 80 18 L 75 42 L 25 42 Z" fill="#94a3b8"/><circle cx="38" cy="30" r="5" fill="#38bdf8"/><circle cx="62" cy="30" r="5" fill="#38bdf8"/><rect x="20" y="48" width="15" height="25" fill="#64748b"/><path d="M 80 30 L 95 20 L 85 45 Z" fill="#a855f7"/></svg>`,
+        wargreymon: `<svg viewBox="0 0 100 100"><circle cx="50" cy="45" r="30" fill="#eab308"/><path d="M 25 20 L 75 20 L 50 40 Z" fill="#e2e8f0"/><circle cx="40" cy="38" r="4" fill="#ef4444"/><circle cx="60" cy="38" r="4" fill="#ef4444"/><rect x="15" y="40" width="18" height="30" rx="4" fill="#e2e8f0"/><rect x="67" y="40" width="18" height="30" rx="4" fill="#e2e8f0"/><path d="M 10 15 L 25 35 L 5 40 Z" fill="#ef4444"/><path d="M 90 15 L 75 35 L 95 40 Z" fill="#ef4444"/></svg>`
+    };
+
+    let gameState = {
+        bits: 0,
+        clickPower: 1,
+        autoBitsPerSec: 0,
+        autoClicksPerSec: 0,
+        stageIndex: 0
+    };
+
+    const EVO_COST = 20;
+
+    const digivolutionLine = [
+        { name: "BOTAMON", stage: "BEBÊ I", svg: digiSVGs.botamon, clickBonus: 1 },
+        { name: "KOROMON", stage: "BEBÊ II", svg: digiSVGs.koromon, clickBonus: 3 },
+        { name: "AGUMON", stage: "EM CRESCIMENTO", svg: digiSVGs.agumon, clickBonus: 10 },
+        { name: "GREYMON", stage: "ADULTO", svg: digiSVGs.greymon, clickBonus: 35 },
+        { name: "METALGREYMON", stage: "PERFEITO", svg: digiSVGs.metalgreymon, clickBonus: 150 },
+        { name: "WARGREYMON", stage: "EXTREMO", svg: digiSVGs.wargreymon, clickBonus: 600 }
+    ];
+
+    const upgrades = [
+        { id: 'autoClicker', name: "🤖 DIGI-BOT (AUTOCLIQUE)", cost: 15, cps: 1, bps: 0, count: 0 },
+        { id: 'punchBag', name: "🥊 SACO DE PANCADAS", cost: 50, cps: 0, bps: 5, count: 0 },
+        { id: 'meatFarm', name: "🍖 FAZENDA DE CARNE", cost: 200, cps: 0, bps: 25, count: 0 },
+        { id: 'superAuto', name: "⚡ AUTO-TRAINER PRO", cost: 1000, cps: 5, bps: 0, count: 0 },
+        { id: 'fileIsland', name: "🏝️ ILHA ARQUIVO", cost: 5000, cps: 0, bps: 200, count: 0 }
+    ];
+
+    const stage2d = document.getElementById('interactive-stage');
+    const digiSprite = document.getElementById('digi-sprite');
+    const bitsText = document.getElementById('bits-text');
+    const bpsText = document.getElementById('bps-text');
+    const bpcText = document.getElementById('bpc-text');
+    const autoClickText = document.getElementById('autoclick-rate-text');
+    const digiName = document.getElementById('digi-name');
+    const digiStage = document.getElementById('digi-stage');
+    const digivolveBtn = document.getElementById('digivolve-btn');
+    const shopContainer = document.getElementById('shop-container');
+
+    const evoCutscene = document.getElementById('evo-cutscene');
+    const evoSpriteBox = document.getElementById('evo-sprite-box');
+    const evoTextDisplay = document.getElementById('evo-text-display');
+
+    function createFloatingText(x, y, text) {
+        const el = document.createElement('div');
+        el.className = 'floating-text';
+        el.innerText = text;
+        const rect = stage2d.getBoundingClientRect();
+        el.style.left = `${x - rect.left - 15}px`;
+        el.style.top = `${y - rect.top - 15}px`;
+        stage2d.appendChild(el);
+        setTimeout(() => el.remove(), 600);
+    }
+
+    function handleDigimonClick(e) {
+        gameState.bits += gameState.clickPower;
+        playBeep();
+
+        if (e && e.clientX) {
+            createFloatingText(e.clientX, e.clientY, `+${gameState.clickPower}`);
+        } else {
+            const rect = digiSprite.getBoundingClientRect();
+            createFloatingText(rect.left + rect.width/2, rect.top + rect.height/2, `+${gameState.clickPower}`);
+        }
+
+        updateUI();
+    }
+
+    stage2d.addEventListener('mousedown', handleDigimonClick);
+
+    function updateUI() {
+        bitsText.innerText = Math.floor(gameState.bits).toLocaleString('pt-BR');
+        bpsText.innerText = gameState.autoBitsPerSec.toLocaleString('pt-BR');
+        bpcText.innerText = gameState.clickPower.toLocaleString('pt-BR');
+        autoClickText.innerText = `${gameState.autoClicksPerSec}/s`;
+
+        const nextStage = digivolutionLine[gameState.stageIndex + 1];
+        if (nextStage) {
+            digivolveBtn.disabled = gameState.bits < EVO_COST;
+        } else {
+            digivolveBtn.innerText = "🏆 NIVEL MÁXIMO!";
+            digivolveBtn.disabled = true;
+        }
+
+        upgrades.forEach((up, i) => {
+            const btn = document.getElementById(`buy-btn-${i}`);
+            if (btn) btn.disabled = gameState.bits < up.cost;
+        });
+    }
+
+    // DISPARO DA CUTSCENE DE DIGIEVOLUÇÃO COM VÍDEO/SOM
+    digivolveBtn.addEventListener('click', () => {
+        const currentDigi = digivolutionLine[gameState.stageIndex];
+        const nextStage = digivolutionLine[gameState.stageIndex + 1];
+
+        if (nextStage && gameState.bits >= EVO_COST) {
+            gameState.bits -= EVO_COST;
+
+            // Ativa Cutscene Fullscreen
+            evoCutscene.style.display = 'flex';
+            evoSpriteBox.innerHTML = currentDigi.svg;
+            evoTextDisplay.innerText = `${currentDigi.name} DIGIEVOLUI PARA...`;
+
+            playEvolutionTheme();
+
+            // Troca o modelo no meio da animação
+            setTimeout(() => {
+                evoSpriteBox.innerHTML = nextStage.svg;
+                evoTextDisplay.innerText = `...${nextStage.name}!`;
+            }, 1800);
+
+            // Finaliza e retorna ao jogo
+            setTimeout(() => {
+                gameState.stageIndex++;
+                gameState.clickPower += nextStage.clickBonus;
+
+                digiName.innerText = nextStage.name;
+                digiStage.innerText = `FASE: ${nextStage.stage}`;
+                digiSprite.innerHTML = nextStage.svg;
+
+                evoCutscene.style.display = 'none';
+                updateUI();
+            }, 3500);
+        }
+    });
+
+    function renderShop() {
+        shopContainer.innerHTML = '';
+        upgrades.forEach((up, i) => {
+            const item = document.createElement('div');
+            item.className = 'shop-item';
+            let desc = up.bps > 0 ? `+${up.bps} BITS/S` : `+${up.cps} CLIQUE/S`;
+
+            item.innerHTML = `
+                <div class="shop-details">
+                    <b>${up.name}</b> (${up.count})
+                    <small>${desc} | CUSTO: ${up.cost.toLocaleString('pt-BR')}</small>
+                </div>
+                <button class="btn shop-btn" id="buy-btn-${i}" onclick="buyUpgrade(${i})">COMPRAR</button>
+            `;
+            shopContainer.appendChild(item);
+        });
+    }
+
+    window.buyUpgrade = function(i) {
+        const up = upgrades[i];
+        if (gameState.bits >= up.cost) {
+            gameState.bits -= up.cost;
+            up.count++;
+            gameState.autoBitsPerSec += up.bps;
+            gameState.autoClicksPerSec += up.cps;
+            up.cost = Math.floor(up.cost * 1.25);
+            renderShop();
+            updateUI();
+        }
+    };
+
+    // Renda Passiva
+    setInterval(() => {
+        gameState.bits += gameState.autoBitsPerSec;
+        updateUI();
+    }, 1000);
+
+    // Auto-Clicker
+    setInterval(() => {
+        if (gameState.autoClicksPerSec > 0 && evoCutscene.style.display !== 'flex') {
+            handleDigimonClick(null);
+        }
+    }, 1000 / Math.max(gameState.autoClicksPerSec, 1));
+
+    // Inicializar Tela com Primeiro Digimon
+    digiSprite.innerHTML = digivolutionLine[0].svg;
+    renderShop();
+    updateUI();
+</script>
+
+</body>
+</html>
